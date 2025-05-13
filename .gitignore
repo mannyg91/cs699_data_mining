@@ -180,3 +180,5 @@ cython_debug/
 *.doc
 *.docx
 *.epub
+*.tmp
+*.qmd

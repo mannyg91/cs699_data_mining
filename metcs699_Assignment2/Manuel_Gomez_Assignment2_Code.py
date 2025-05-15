@@ -5,7 +5,9 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
+from imblearn.over_sampling import RandomOverSampler
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -49,9 +51,10 @@ y = df['MAX_SEV']
 print("\nPercentage distribution:")
 print(y.value_counts(normalize=True))  # "fatal" is a very small minority class
 
-# Generate training and holdout partitions (holding out 1/3)
+# 3.1 - Generate training and holdout partitions (holding out 1/3)
 X_train, X_holdout, y_train, y_holdout = train_test_split(X, y, test_size=1/3, stratify=y, random_state=42)
 
+# 3.2 - Scale/center, fit K-NN, make predictions, confusion matrix, accuracy
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_holdout_scaled = scaler.transform(X_holdout)
@@ -127,3 +130,99 @@ plt.show()
 
 # Stopped here. Should study python ML concepts as I continue
 
+
+# Problem 4 -
+# 4.1
+df = pd.read_csv('accidents1000.csv')
+print("total rows:", len(df))
+print("unique values:", df['MAX_SEV'].unique())
+
+df = df[df['MAX_SEV'] != 'no-injury']
+
+print("total rows:", len(df))
+print("unique values:", df['MAX_SEV'].unique())
+
+X = df.drop('MAX_SEV', axis=1)  # axis 1 specifies we're dropping a column, not a row
+y = df['MAX_SEV']
+
+# 4.2 - Generate training and holdout partitions (holding out 1/3)
+X_train, X_holdout, y_train, y_holdout = train_test_split(X, y, test_size=1/3, stratify=y, random_state=42)
+
+# 4.3 - Fit logistic regression model, make predictions, generate confusion matrix, compute accuracy and F-score
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_holdout)
+
+print("\nPercentage distribution (holdout):")
+print(y_holdout.value_counts())
+print(y_holdout.value_counts(normalize=True))  # "fatal" is a very small minority class
+
+cm = confusion_matrix(y_holdout, y_pred)
+acc = accuracy_score(y_holdout, y_pred)
+f1 = f1_score(y_holdout, y_pred, pos_label='fatal')
+
+print(f"Accuracy: {acc:.4f}")
+print(f"F1 Score: {f1:.4f}")
+
+# Confusion matrix visualization
+# ROWS represent the actual/true classes (what really happened), sum is the total count of actual FOR that entire row category
+# COLUMNS represent the predicted classes (what the model thought happened), sum is the total count of predictions FOR that entire column category
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, annot_kws={'size': 16}, fmt='d', cmap='Blues',
+            xticklabels=sorted(y.unique()),
+            yticklabels=sorted(y.unique()))
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.tight_layout()
+plt.show()
+
+# 4.4 (Answered in text document)
+# 4.5 (Answered in text document)
+# 4.6 - Apply oversampling (Random Oversampling)
+
+ros = RandomOverSampler(random_state=42)  # Note: Random over-sampling is more flexible for smaller datasets versus SMOTE
+X_train, y_train = ros.fit_resample(X_train, y_train)
+
+# print("\nPercentage distribution:")
+# print(y_train.value_counts(normalize=True))  # "fatal" is now 50% of the observations
+
+# 4.7 - Fit Logistic Regression, Predictions, Confusion Matrix, Accuracy, F-score
+model = LogisticRegression(max_iter=500) # allowing more iterations as dataset has grown
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_holdout)
+
+cm = confusion_matrix(y_holdout, y_pred)
+acc = accuracy_score(y_holdout, y_pred)
+f1 = f1_score(y_holdout, y_pred, pos_label='fatal')
+
+print(f"Accuracy (Oversampling): {acc:.4f}")
+print(f"F1 Score (Oversampling): {f1: .4f}")
+
+# Confusion matrix visualization
+# ROWS represent the actual/true classes (what really happened), sum is the total count of actual FOR that entire row category
+# COLUMNS represent the predicted classes (what the model thought happened), sum is the total count of predictions FOR that entire column category
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, annot_kws={'size': 16}, fmt='d', cmap='Blues',
+            xticklabels=sorted(y.unique()),
+            yticklabels=sorted(y.unique()))
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix (Class-Balanced)')
+plt.tight_layout()
+plt.show()
+
+# 4.8 (Answered in text document)
+# 4.9 - Variable importance
+for feature, coef in zip(X_train.columns, model.coef_[0]):
+    print(f"{feature}: {coef:.4f}")
+
+
+
+
+# Problem 5
+
+
+# Problem 6

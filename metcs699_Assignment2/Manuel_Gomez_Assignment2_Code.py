@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 from scipy.spatial.distance import hamming, euclidean, cityblock
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -225,11 +226,10 @@ import matplotlib.pyplot as plt
 # Problem 5
 # 5.1 Data partitioning
 df = pd.read_csv('powdermetallurgy.csv')
-print("total rows:", len(df))
-print("unique values:", df['Shrinkage'].unique())
 
 print("total rows:", len(df))
 print("unique values:", df['Shrinkage'].unique())
+print("data types:", df.dtypes)  # by default, get_dummies encodes object-type or categorical columns into binary ones
 
 df = pd.get_dummies(df) # must dummy encode variables for use with linear regression
 X = df.drop('Shrinkage', axis=1)  # axis 1 specifies we're dropping a column, not a row
@@ -243,8 +243,39 @@ model.fit(X_train, y_train)
 
 y_pred = model.predict(X_holdout)
 
+mae = mean_absolute_error(y_holdout, y_pred)
+print(f'MAE): {mae:.4f}')
 
 rmse = root_mean_squared_error(y_holdout, y_pred)
-print(rmse)
+print(f"RMSE: {rmse:.4f}")
 
 # Problem 6
+intercept = -3.485
+coef_A1 = 0.045
+coef_A2 = 0.003
+
+def logistic_regression(A1, A2):
+    # Calculate the logit (linear combination of features and coefficients)
+    logit = intercept + (coef_A1 * A1) + (coef_A2 * A2)
+
+    # Apply the sigmoid function to get the probability
+    p = 1 / (1 + math.exp(-logit))
+
+    return p
+
+
+def classify(p):
+    if p >= 0.5:
+        return "yes"
+    else:
+        return "no"
+
+# Object O1: A1 = 47, A2 = 213
+p_O1 = logistic_regression(47, 213)
+classification_O1 = classify(p_O1)
+print(f"Object O1 classified as: {classification_O1} (Probability: {p_O1:.4f})")
+
+# Object O2: A1 = 65, A2 = 276
+p_O2 = logistic_regression(65, 276)
+classification_O2 = classify(p_O2)
+print(f"Object O2 classified as: {classification_O2} (Probability: {p_O2:.4f})")
